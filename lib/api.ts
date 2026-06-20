@@ -59,3 +59,24 @@ export async function deleteEvento(id: number): Promise<Evento> {
   if (!res.ok) throw new Error('Error al eliminar evento');
   return res.json();
 }
+
+/**
+ * Guarda en el backend la prueba on-chain (txHash + onchainId) después de que el
+ * usuario firmó la transacción con MetaMask. Llama a PUT /api/eventos/:id/tx-hash.
+ */
+export async function updateTxHash(
+  id: number,
+  txHash: string,
+  onchainId?: number,
+): Promise<Evento> {
+  const res = await fetch(`${BASE}/${id}/tx-hash`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ txHash, onchainId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error al guardar el txHash' }));
+    throw new Error(err.error ?? 'Error al guardar el txHash');
+  }
+  return res.json();
+}

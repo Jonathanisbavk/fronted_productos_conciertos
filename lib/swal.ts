@@ -10,7 +10,7 @@ import Swal from 'sweetalert2';
 type Icono = 'success' | 'error' | 'info' | 'warning' | 'question';
 
 /** Escapa texto del usuario antes de inyectarlo como HTML en una alerta. */
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 }
@@ -89,4 +89,14 @@ export function showLoading(title = 'Procesando...') {
 /** Cierra cualquier alerta abierta. */
 export function closeAlert() {
   Swal.close();
+}
+
+/** Muestra un resultado con contenido HTML (p. ej. la tabla de validación on-chain). */
+export function showResult(icon: Icono, title: string, html: string) {
+  return modal.fire({
+    icon,
+    title,
+    html,
+    confirmButtonText: 'Cerrar',
+  });
 }

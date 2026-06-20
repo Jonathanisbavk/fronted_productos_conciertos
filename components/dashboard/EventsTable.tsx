@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Link2 } from 'lucide-react';
-import { Button }       from '@/components/ui/button';
-import { NeonBadge }    from '@/components/shared/NeonBadge';
-import { EventModal }   from './EventModal';
-import { deleteEvento } from '@/lib/api';
-import { Evento }       from '@/lib/types';
-import { notify, confirmDelete, showLoading, closeAlert } from '@/lib/swal';
+import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Link2, Zap, ShieldCheck } from 'lucide-react';
+import { Button }                  from '@/components/ui/button';
+import { NeonBadge }               from '@/components/shared/NeonBadge';
+import { EventModal }              from './EventModal';
+import { deleteEvento, updateTxHash } from '@/lib/api';
+import { enviarEventoOnChain, validarEventoOnChain } from '@/lib/blockchain';
+import { Evento }                  from '@/lib/types';
+import { notify, confirmDelete, showLoading, closeAlert, showResult, escapeHtml } from '@/lib/swal';
 
 interface EventsTableProps {
   eventos:   Evento[];
@@ -70,6 +71,69 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
     } catch {
       closeAlert();
       notify('error', 'No se pudo eliminar el evento');
+    }
+  };
+
+  // Flujo MetaMask (como el botón "ENVIAR A BLOCKCHAIN" del lab de facturas):
+  // firma la transacción en el navegador y guarda el txHash en el backend.
+  const enviarBlockchain = async (ev: Evento) => {
+    try {
+      showLoading('Confirma la transacción en MetaMask...');
+      const { txHash, onchainId } = await enviarEventoOnChain(ev);
+      await updateTxHash(ev.id, txHash, onchainId);
+      closeAlert();
+      notify('success', `On-chain ✓ ${txHash.slice(0, 10)}…`);
+      onRefresh();
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo enviar a la blockchain');
+    }
+  };
+
+  // Valida contra la blockchain: lee los datos on-chain (solo lectura, sin firmar) y
+  // los compara con la BD, mostrando una tabla con el resultado campo a campo.
+  const validar = async (ev: Evento) => {
+    try {
+      showLoading('Leyendo datos on-chain...');
+      const r = await validarEventoOnChain(ev);
+      closeAlert();
+
+      const filas = r.checks
+        .map(
+          (c) => `<tr>
+            <td style="padding:6px 10px;text-align:left;color:#94a3b8">${escapeHtml(c.campo)}</td>
+            <td style="padding:6px 10px;font-family:monospace">${escapeHtml(c.bd)}</td>
+            <td style="padding:6px 10px;font-family:monospace">${escapeHtml(c.chain)}</td>
+            <td style="padding:6px 10px;text-align:center">${c.ok ? '✅' : '❌'}</td>
+          </tr>`,
+        )
+        .join('');
+
+      const html = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+          <thead>
+            <tr style="color:#64748b;text-transform:uppercase;font-size:11px">
+              <th style="padding:6px 10px;text-align:left">Campo</th>
+              <th style="padding:6px 10px;text-align:left">Base de datos</th>
+              <th style="padding:6px 10px;text-align:left">On-chain</th>
+              <th style="padding:6px 10px">OK</th>
+            </tr>
+          </thead>
+          <tbody>${filas}</tbody>
+        </table>
+        <p style="margin-top:12px;font-size:12px;color:#64748b">
+          Organizador on-chain:<br/>
+          <span style="font-family:monospace;color:#34d399">${escapeHtml(r.organizador)}</span>
+        </p>`;
+
+      showResult(
+        r.ok ? 'success' : 'warning',
+        r.ok ? 'Datos verificados on-chain ✓' : 'Hay diferencias con la cadena',
+        html,
+      );
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo validar on-chain');
     }
   };
 
@@ -168,6 +232,23 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center gap-1">
+                    {!ev.txHash ? (
+                      <button
+                        onClick={() => enviarBlockchain(ev)}
+                        className="p-1.5 rounded hover:bg-emerald-500/10 text-slate-500 hover:text-emerald-400 transition-colors"
+                        title="Enviar a blockchain (firma con MetaMask)"
+                      >
+                        <Zap size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => validar(ev)}
+                        className="p-1.5 rounded hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-colors"
+                        title="Validar contra la blockchain"
+                      >
+                        <ShieldCheck size={14} />
+                      </button>
+                    )}
                     <a
                       href={ev.metadataPath}
                       target="_blank"
@@ -225,6 +306,15 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
                 </div>
               )}
               <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+                {!ev.txHash ? (
+                  <Button size="sm" variant="ghost" className="flex-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => enviarBlockchain(ev)}>
+                    <Zap size={13} className="mr-1" /> Blockchain
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="ghost" className="flex-1 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10" onClick={() => validar(ev)}>
+                    <ShieldCheck size={13} className="mr-1" /> Validar
+                  </Button>
+                )}
                 <Button size="sm" variant="ghost" className="flex-1 text-violet-400 hover:text-violet-300 hover:bg-violet-500/10" onClick={() => setEditEvento(ev)}>
                   <Pencil size={13} className="mr-1" /> Editar
                 </Button>

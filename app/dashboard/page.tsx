@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, RefreshCw, Zap } from 'lucide-react';
+import { Plus, RefreshCw, Zap, Wallet } from 'lucide-react';
 import { Button }      from '@/components/ui/button';
 import { StatsBar }    from '@/components/dashboard/StatsBar';
 import { EventsTable } from '@/components/dashboard/EventsTable';
@@ -9,12 +9,24 @@ import { EventModal }  from '@/components/dashboard/EventModal';
 import { getEventos }  from '@/lib/api';
 import { Evento }      from '@/lib/types';
 import { notify }      from '@/lib/swal';
+import { useWallet }   from '@/lib/useWallet';
 
 export default function DashboardPage() {
   const [eventos,      setEventos]      = useState<Evento[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [createOpen,   setCreateOpen]   = useState(false);
   const [refreshing,   setRefreshing]   = useState(false);
+
+  const { account, connect, connecting } = useWallet();
+
+  const handleConnect = async () => {
+    try {
+      await connect();
+      notify('success', 'Wallet conectada ✓');
+    } catch (e) {
+      notify('error', e instanceof Error ? e.message : 'No se pudo conectar la wallet');
+    }
+  };
 
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -64,6 +76,26 @@ export default function DashboardPage() {
             <span className="hidden sm:inline text-slate-600 text-sm">/ Admin</span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Estado de la wallet (MetaMask), como el "Cuenta conectada" del lab */}
+            {account ? (
+              <span
+                title={account}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-mono text-emerald-400"
+              >
+                <Wallet size={13} />
+                {`${account.slice(0, 6)}…${account.slice(-4)}`}
+              </span>
+            ) : (
+              <Button
+                onClick={handleConnect}
+                disabled={connecting}
+                variant="outline"
+                className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              >
+                <Wallet size={15} />
+                <span className="hidden sm:inline">{connecting ? 'Conectando…' : 'Conectar wallet'}</span>
+              </Button>
+            )}
             <button
               onClick={() => fetchData(true)}
               disabled={refreshing}
