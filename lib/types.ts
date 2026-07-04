@@ -10,8 +10,10 @@ export interface Evento {
   aforo: number;
   banner: string;
   metadataPath: string;
-  txHash?: string | null;     // prueba on-chain: hash de la transaccion en la blockchain
-  onchainId?: number | null;  // id del evento dentro del contrato Events
+  txHash?: string | null;      // prueba on-chain: hash de la transaccion en la blockchain
+  onchainId?: number | null;   // id del evento dentro del contrato Events
+  nftTokenId?: number | null;  // tokenId del boleto NFT acunado (contrato EventoNFT)
+  nftOwner?: string | null;    // wallet dueña actual del NFT (cambia al transferir)
   createdAt: string;
 }
 

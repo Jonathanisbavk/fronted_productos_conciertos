@@ -1,13 +1,19 @@
 'use client';
 
-const GENRE_COLORS: Record<string, string> = {
-  rock:      'border-purple-500 text-purple-400 shadow-purple-500/30',
-  pop:       'border-pink-500   text-pink-400   shadow-pink-500/30',
-  jazz:      'border-yellow-500 text-yellow-400 shadow-yellow-500/30',
-  reggaeton: 'border-orange-500 text-orange-400 shadow-orange-500/30',
-  electronica:'border-cyan-500  text-cyan-400   shadow-cyan-500/30',
-  clasica:   'border-blue-500   text-blue-400   shadow-blue-500/30',
-  default:   'border-slate-500  text-slate-400  shadow-slate-500/30',
+/**
+ * Etiqueta de "sección" del boleto (por género musical).
+ * Se conserva el nombre NeonBadge por compatibilidad de importaciones,
+ * pero el estilo es el de un código de sección impreso: punto + texto en
+ * versalitas mono, con tintes apagados dentro de la paleta de taquilla.
+ */
+const GENRE_DOT: Record<string, string> = {
+  rock:        '#c084b5',
+  pop:         '#d98aa6',
+  jazz:        '#d9a441',
+  reggaeton:   '#e0935a',
+  electronica: '#7fae9c',
+  clasica:     '#9aa6c4',
+  default:     '#9b8d75',
 };
 
 interface NeonBadgeProps {
@@ -17,14 +23,18 @@ interface NeonBadgeProps {
 export function NeonBadge({ label }: NeonBadgeProps) {
   if (!label) return null;
   const key = label.toLowerCase().replace(/[áéíóúü]/g, (c) =>
-    ({ á:'a', é:'e', í:'i', ó:'o', ú:'u', ü:'u' })[c] ?? c
+    ({ á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u' })[c] ?? c,
   );
-  const colors = GENRE_COLORS[key] ?? GENRE_COLORS.default;
+  const dot = GENRE_DOT[key] ?? GENRE_DOT.default;
 
   return (
     <span
-      className={`inline-block px-2 py-0.5 text-xs font-medium rounded-full border shadow-sm ${colors}`}
+      className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-muted/50 px-2 py-0.5 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] text-paper/80"
     >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: dot, boxShadow: `0 0 6px ${dot}66` }}
+      />
       {label}
     </span>
   );

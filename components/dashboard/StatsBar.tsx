@@ -14,25 +14,42 @@ export function StatsBar({ eventos }: StatsBarProps) {
     ? (eventos.reduce((sum, e) => sum + Number(e.precio_eth), 0) / totalEventos).toFixed(4)
     : '0.0000';
 
-  const stats = [
-    { icon: Ticket, label: 'Eventos',       value: totalEventos.toLocaleString(), color: 'text-violet-400',  ring: 'hover:border-violet-500/30',  iconBg: 'from-violet-500/20 to-violet-500/5',   glow: 'shadow-violet-500/10' },
-    { icon: Users,  label: 'Aforo total',   value: totalAforo.toLocaleString(),   color: 'text-cyan-400',    ring: 'hover:border-cyan-500/30',    iconBg: 'from-cyan-500/20 to-cyan-500/5',       glow: 'shadow-cyan-500/10'   },
-    { icon: Coins,  label: 'Precio Ξ prom', value: `Ξ ${avgEth}`,                 color: 'text-emerald-400', ring: 'hover:border-emerald-500/30', iconBg: 'from-emerald-500/20 to-emerald-500/5', glow: 'shadow-emerald-500/10' },
+  // Cada stat es un talón de boleto: serie (icono) · perforación · cuerpo (dato).
+  const stubs = [
+    { icon: Ticket, serie: 'A',  label: 'Funciones',  value: totalEventos.toLocaleString('es-CO') },
+    { icon: Users,  serie: 'B',  label: 'Aforo total', value: totalAforo.toLocaleString('es-CO') },
+    { icon: Coins,  serie: 'Ξ',  label: 'Precio medio', value: avgEth, unit: 'ETH' },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-      {stats.map(({ icon: Icon, label, value, color, ring, iconBg, glow }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {stubs.map(({ icon: Icon, serie, label, value, unit }, i) => (
         <div
           key={label}
-          className={`group flex items-center gap-4 rounded-xl border border-white/5 bg-[#12121a] px-5 py-4 shadow-lg ${glow} ${ring} transition-all duration-200 hover:-translate-y-0.5`}
+          className="ticket-stub guilloche animate-rise flex items-stretch bg-card ring-1 ring-border"
+          style={{ animationDelay: `${i * 70}ms` }}
         >
-          <div className={`rounded-lg p-2.5 bg-gradient-to-br ${iconBg} ${color} ring-1 ring-white/5 transition-transform group-hover:scale-110`}>
-            <Icon size={22} />
+          {/* Talón: serie + icono (ancho = --stub: 72px) */}
+          <div className="flex w-[72px] shrink-0 flex-col items-center justify-center gap-1 py-4">
+            <Icon size={18} className="text-gold" strokeWidth={1.75} />
+            <span className="font-mono text-[0.65rem] tracking-widest text-muted-foreground">
+              {serie}-{String(i + 1).padStart(2, '0')}
+            </span>
           </div>
-          <div>
-            <p className="text-xs text-slate-500 uppercase tracking-wider">{label}</p>
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
+
+          {/* Cuerpo del boleto */}
+          <div className="flex flex-1 flex-col justify-center py-4 pl-5 pr-5">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-muted-foreground">
+              {label}
+            </p>
+            <p className="mt-0.5 flex items-baseline gap-1.5">
+              <span className="font-display text-3xl font-semibold leading-none tracking-tight text-paper tnum">
+                {value}
+              </span>
+              {unit && (
+                <span className="font-mono text-xs text-gold">{unit}</span>
+              )}
+            </p>
           </div>
         </div>
       ))}

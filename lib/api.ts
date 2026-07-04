@@ -80,3 +80,43 @@ export async function updateTxHash(
   }
   return res.json();
 }
+
+// --- Boleto NFT (contrato EventoNFT) ---
+
+/** Config del contrato NFT (address + abi) que el frontend usa para acunar con MetaMask. */
+export async function getNftConfig(): Promise<{ address: string; abi: unknown[] }> {
+  const res = await fetch(`${BASE}/nft/config`, { cache: 'no-store' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error al obtener la config NFT' }));
+    throw new Error(err.error ?? 'Error al obtener la config NFT');
+  }
+  return res.json();
+}
+
+/** Guarda en el backend el tokenId del boleto NFT (y su dueño) tras acunarlo. PUT /:id/nft */
+export async function updateNftToken(id: number, tokenId: number, owner?: string): Promise<Evento> {
+  const res = await fetch(`${BASE}/${id}/nft`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tokenId, owner }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error al guardar el tokenId' }));
+    throw new Error(err.error ?? 'Error al guardar el tokenId');
+  }
+  return res.json();
+}
+
+/** Registra en el backend el nuevo dueño del NFT tras transferirlo. PUT /:id/nft/transfer */
+export async function transferNftOwner(id: number, owner: string): Promise<Evento> {
+  const res = await fetch(`${BASE}/${id}/nft/transfer`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ owner }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error al guardar el nuevo dueño' }));
+    throw new Error(err.error ?? 'Error al guardar el nuevo dueño');
+  }
+  return res.json();
+}

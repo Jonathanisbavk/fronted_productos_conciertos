@@ -1,9 +1,10 @@
 'use client';
 
 /**
- * Helpers de SweetAlert2 con el tema oscuro/neon de TicketChain.
+ * Helpers de SweetAlert2 con el tema "Box Office Ledger" de TicketChain.
  * Centraliza alertas, toasts y confirmaciones para que todo el dashboard
  * comparta el mismo estilo (los estilos viven en app/globals.css, clases .swal-tc-*).
+ * Paleta: tinta cálida #1c1813 · papel #ece3d0 · bermellón #e2543b · gris cálido #9b8d75.
  */
 import Swal from 'sweetalert2';
 
@@ -17,8 +18,8 @@ export function escapeHtml(s: string): string {
 
 /** Diálogo modal base (confirmaciones, cargas...). */
 const modal = Swal.mixin({
-  background: '#12121a',
-  color: '#e2e8f0',
+  background: '#1c1813',
+  color: '#ece3d0',
   buttonsStyling: false,
   customClass: {
     popup: 'swal-tc-popup',
@@ -37,8 +38,8 @@ const toast = Swal.mixin({
   showConfirmButton: false,
   timer: 2800,
   timerProgressBar: true,
-  background: '#12121a',
-  color: '#e2e8f0',
+  background: '#1c1813',
+  color: '#ece3d0',
   customClass: { popup: 'swal-tc-toast', title: 'swal-tc-toast-title' },
   didOpen: (el) => {
     el.addEventListener('mouseenter', Swal.stopTimer);
@@ -58,8 +59,8 @@ export function confirmDelete(nombre: string): Promise<boolean> {
       icon: 'warning',
       title: 'Eliminar evento',
       html:
-        `¿Seguro que quieres eliminar <b style="color:#f87171">${escapeHtml(nombre)}</b>?` +
-        `<br/><span style="color:#64748b;font-size:13px">Se borrará el banner y la metadata NFT. Esta acción no se puede deshacer.</span>`,
+        `¿Seguro que quieres eliminar <b style="color:#e2543b">${escapeHtml(nombre)}</b>?` +
+        `<br/><span style="color:#9b8d75;font-size:13px">Se borrará el banner y la metadata NFT. Esta acción no se puede deshacer.</span>`,
       showCancelButton: true,
       focusCancel: true,
       confirmButtonText: 'Sí, eliminar',
@@ -89,6 +90,37 @@ export function showLoading(title = 'Procesando...') {
 /** Cierra cualquier alerta abierta. */
 export function closeAlert() {
   Swal.close();
+}
+
+/**
+ * Pide un texto al usuario (p. ej. la wallet destino de una transferencia).
+ * Devuelve el valor introducido, o null si cancela.
+ */
+export async function promptText(
+  title: string,
+  opts: { html?: string; value?: string; placeholder?: string; confirmText?: string } = {},
+): Promise<string | null> {
+  const r = await modal.fire({
+    title,
+    html: opts.html,
+    input: 'text',
+    inputValue: opts.value ?? '',
+    inputPlaceholder: opts.placeholder ?? '',
+    showCancelButton: true,
+    confirmButtonText: opts.confirmText ?? 'Continuar',
+    cancelButtonText: 'Cancelar',
+    inputAttributes: { spellcheck: 'false', autocapitalize: 'off' },
+    customClass: {
+      popup: 'swal-tc-popup',
+      title: 'swal-tc-title',
+      htmlContainer: 'swal-tc-text',
+      input: 'swal-tc-input',
+      actions: 'swal-tc-actions',
+      confirmButton: 'swal-tc-confirm',
+      cancelButton: 'swal-tc-cancel',
+    },
+  });
+  return r.isConfirmed ? (r.value as string).trim() : null;
 }
 
 /** Muestra un resultado con contenido HTML (p. ej. la tabla de validación on-chain). */

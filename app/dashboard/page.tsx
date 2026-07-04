@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, RefreshCw, Zap, Wallet } from 'lucide-react';
+import { Plus, RefreshCw, Ticket, Wallet } from 'lucide-react';
 import { Button }      from '@/components/ui/button';
 import { StatsBar }    from '@/components/dashboard/StatsBar';
 import { EventsTable } from '@/components/dashboard/EventsTable';
@@ -45,42 +45,33 @@ export default function DashboardPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleCreated = (ev: Evento) => {
-    notify('success', `"${ev.name}" creado exitosamente 🎫`);
+    notify('success', `"${ev.name}" abierto en taquilla 🎫`);
     setCreateOpen(false);
     fetchData(true);
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0a0a0f] text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
 
-      {/* Glow decorativo de fondo */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-80 opacity-60"
-        style={{
-          background:
-            'radial-gradient(60% 100% at 50% 0%, rgba(124,58,237,0.18) 0%, rgba(34,211,238,0.06) 45%, transparent 75%)',
-        }}
-      />
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500/20 to-cyan-500/20 ring-1 ring-white/10">
-              <Zap size={18} className="text-violet-400" />
-            </div>
-            <span className="font-bold tracking-tight bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">
+      {/* ── Marquesina (cabecera de taquilla) ───────────────────── */}
+      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Ticket size={20} className="text-primary" strokeWidth={2} />
+            <span className="font-display text-lg font-semibold uppercase tracking-[0.22em] text-paper">
               TicketChain
             </span>
-            <span className="hidden sm:inline text-slate-600 text-sm">/ Admin</span>
+            <span className="hidden font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground sm:inline">
+              · Taquilla
+            </span>
           </div>
+
           <div className="flex items-center gap-2">
-            {/* Estado de la wallet (MetaMask), como el "Cuenta conectada" del lab */}
+            {/* Will-call: estado de la wallet (MetaMask) */}
             {account ? (
               <span
                 title={account}
-                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-mono text-emerald-400"
+                className="hidden items-center gap-1.5 rounded-sm border border-valid/40 bg-valid/10 px-2.5 py-1.5 font-mono text-xs text-valid sm:inline-flex"
               >
                 <Wallet size={13} />
                 {`${account.slice(0, 6)}…${account.slice(-4)}`}
@@ -90,79 +81,92 @@ export default function DashboardPage() {
                 onClick={handleConnect}
                 disabled={connecting}
                 variant="outline"
-                className="gap-1.5 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                size="lg"
+                className="gap-1.5 border-valid/40 text-valid hover:bg-valid/10 hover:text-valid"
               >
                 <Wallet size={15} />
                 <span className="hidden sm:inline">{connecting ? 'Conectando…' : 'Conectar wallet'}</span>
               </Button>
             )}
-            <button
+            <Button
               onClick={() => fetchData(true)}
               disabled={refreshing}
-              className="p-2 rounded-lg hover:bg-white/5 text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
-              title="Refrescar"
+              variant="ghost"
+              size="icon-lg"
+              className="text-muted-foreground hover:text-paper"
+              title="Refrescar cartelera"
             >
               <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-            </button>
+            </Button>
             <Button
               onClick={() => setCreateOpen(true)}
-              className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white gap-2 shadow-lg shadow-violet-500/25 transition-all hover:shadow-violet-500/40"
+              size="lg"
+              className="gap-2 font-semibold"
             >
               <Plus size={16} />
-              <span className="hidden sm:inline">Crear Evento</span>
+              <span className="hidden sm:inline">Abrir taquilla</span>
               <span className="sm:hidden">Nuevo</span>
             </Button>
           </div>
         </div>
+        {/* Línea de corte del boleto */}
+        <div className="perf-rule perf-rule-gold" aria-hidden />
       </header>
 
-      {/* Main */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      {/* ── Contenido ───────────────────────────────────────────── */}
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
 
-        {/* Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-300 bg-clip-text text-transparent">
-            Dashboard de Eventos
+        {/* Banda "cartelera" */}
+        <div className="mb-9 animate-rise">
+          <p className="font-mono text-xs uppercase tracking-[0.32em] text-gold">
+            Box Office · Registro on-chain
+          </p>
+          <h1 className="mt-2 font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-paper sm:text-6xl">
+            Cartelera
           </h1>
-          <p className="text-slate-500 text-sm mt-1.5">
-            Gestión de conciertos y eventos para el sistema de tickets blockchain
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+            Cada función se emite como un boleto NFT y queda sellada en la cadena.
+            Crea, edita y verifica que la taquilla coincide con el registro.
           </p>
         </div>
 
-        {/* Stats */}
-        <StatsBar eventos={eventos} />
-
-        {/* Table section */}
-        <div className="rounded-xl border border-white/5 bg-[#0d0d14]">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-              Eventos
-            </h2>
-            <span className="text-xs text-slate-600 bg-white/5 px-2 py-0.5 rounded-full">
-              {eventos.length} registros
-            </span>
-          </div>
-
-          <div className="p-4 sm:p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-20 gap-3 text-slate-600">
-                <RefreshCw size={18} className="animate-spin" />
-                <span>Cargando eventos...</span>
-              </div>
-            ) : (
-              <EventsTable eventos={eventos} onRefresh={() => fetchData(true)} />
-            )}
-          </div>
+        {/* Talones de resumen */}
+        <div className="mb-10">
+          <StatsBar eventos={eventos} />
         </div>
 
-        {/* Footer info */}
-        <p className="text-center text-xs text-slate-700 mt-8">
-          API · <span className="font-mono">http://localhost:3000</span>
-          {' '}· MariaDB · mod_02_productos
+        {/* Manifiesto / ledger */}
+        <section className="overflow-hidden rounded-md bg-card ring-1 ring-border">
+          <div className="flex items-center justify-between px-5 py-3.5 sm:px-6">
+            <h2 className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Manifiesto
+            </h2>
+            <span className="font-mono text-[0.7rem] tracking-wide text-gold">
+              {eventos.length.toString().padStart(3, '0')} entradas
+            </span>
+          </div>
+          <div className="perf-rule" aria-hidden />
+
+          <div className="p-3 sm:p-5">
+            {loading ? (
+              <div className="flex items-center justify-center gap-3 py-20 font-mono text-sm text-muted-foreground">
+                <RefreshCw size={16} className="animate-spin" />
+                <span>Abriendo taquilla…</span>
+              </div>
+            ) : (
+              <EventsTable eventos={eventos} onRefresh={() => fetchData(true)} account={account} />
+            )}
+          </div>
+        </section>
+
+        {/* Pie técnico */}
+        <p className="mt-8 text-center font-mono text-[0.7rem] text-muted-foreground/70">
+          API <span className="text-muted-foreground">localhost:3000</span>
+          {'  ·  '}MariaDB{'  ·  '}mod_02_productos
         </p>
       </main>
 
-      {/* Create modal */}
+      {/* Modal de emisión */}
       <EventModal
         open={createOpen}
         evento={null}

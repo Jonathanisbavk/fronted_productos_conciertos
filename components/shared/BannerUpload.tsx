@@ -42,13 +42,14 @@ export function BannerUpload({ value, previewUrl, onChange }: BannerUploadProps)
   return (
     <div className="relative">
       {preview ? (
-        <div className="relative rounded-lg overflow-hidden border border-cyan-500/40 h-40">
+        <div className="relative h-40 overflow-hidden rounded-sm border border-border">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={preview} alt="Banner preview" className="w-full h-full object-cover" />
+          <img src={preview} alt="Vista previa del boleto" className="h-full w-full object-cover" />
           <button
             type="button"
             onClick={clear}
-            className="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white rounded-full p-1 transition-colors"
+            aria-label="Quitar imagen"
+            className="absolute right-2 top-2 rounded-sm bg-background/80 p-1 text-paper outline-none transition-colors hover:bg-destructive hover:text-white focus-visible:ring-2 focus-visible:ring-destructive/60"
           >
             <X size={14} />
           </button>
@@ -58,21 +59,21 @@ export function BannerUpload({ value, previewUrl, onChange }: BannerUploadProps)
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
-          className={`flex flex-col items-center justify-center gap-2 h-40 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
+          className={`flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border-2 border-dashed transition-colors focus-within:border-gold/60 focus-within:ring-2 focus-within:ring-gold/30 ${
             dragOver
-              ? 'border-cyan-400 bg-cyan-500/10'
-              : 'border-slate-600 hover:border-cyan-500/60 bg-slate-800/40'
+              ? 'border-primary bg-primary/10'
+              : 'border-border bg-background/50 hover:border-gold/60'
           }`}
         >
-          <ImagePlus size={32} className="text-slate-500" />
-          <span className="text-sm text-slate-400">
-            Arrastra una imagen o <span className="text-cyan-400 underline">selecciona</span>
+          <ImagePlus size={30} className="text-muted-foreground" strokeWidth={1.5} />
+          <span className="text-sm text-muted-foreground">
+            Arrastra el arte o <span className="text-gold underline underline-offset-2">selecciona</span>
           </span>
-          <span className="text-xs text-slate-600">JPG, PNG, WEBP · Máx 5 MB</span>
+          <span className="font-mono text-[0.65rem] uppercase tracking-wider text-muted-foreground/60">JPG · PNG · WEBP — máx 5 MB</span>
           <input
             type="file"
             accept="image/*"
-            className="hidden"
+            className="sr-only"
             onChange={handleInput}
           />
         </label>

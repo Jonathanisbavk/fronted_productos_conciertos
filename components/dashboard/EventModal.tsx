@@ -84,23 +84,28 @@ export function EventModal({ open, evento, onClose, onSaved }: EventModalProps) 
     }
   };
 
-  const fieldClass = 'bg-[#0a0a0f] border-white/10 text-slate-100 placeholder:text-slate-600 focus:border-cyan-500/60 focus:ring-cyan-500/20';
+  const fieldClass = 'h-9 bg-background border-input text-paper placeholder:text-muted-foreground/60 focus:border-primary focus-visible:ring-primary/25';
+  const labelClass = 'font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground';
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-[#12121a] border-white/10 text-slate-100 max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-card text-paper ring-1 ring-border">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-white">
-            {isEdit ? '✏️ Editar evento' : '🎫 Crear nuevo evento'}
+          <p className="font-mono text-[0.62rem] uppercase tracking-[0.28em] text-gold">
+            {isEdit ? 'Editar función' : 'Abrir taquilla'}
+          </p>
+          <DialogTitle className="font-display text-2xl font-semibold uppercase tracking-tight text-paper">
+            {isEdit ? 'Editar evento' : 'Nueva función'}
           </DialogTitle>
         </DialogHeader>
+        <div className="perf-rule -mt-1" aria-hidden />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-1 space-y-4">
 
           {/* Banner */}
           <div>
-            <Label className="text-slate-400 text-xs uppercase tracking-wider mb-2 block">
-              Banner {!isEdit && <span className="text-red-400">*</span>}
+            <Label className={`${labelClass} mb-2 block`}>
+              Banner {!isEdit && <span className="text-primary">*</span>}
             </Label>
             <BannerUpload
               value={banner}
@@ -111,39 +116,39 @@ export function EventModal({ open, evento, onClose, onSaved }: EventModalProps) 
 
           {/* Nombre */}
           <div>
-            <Label className="text-slate-400 text-xs uppercase tracking-wider">Nombre <span className="text-red-400">*</span></Label>
+            <Label className={labelClass}>Nombre <span className="text-primary">*</span></Label>
             <Input {...register('name')} className={fieldClass} placeholder="Ej: Rock de los 90s" />
-            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+            {errors.name && <p className="text-destructive text-xs mt-1">{errors.name.message}</p>}
           </div>
 
           {/* Descripción */}
           <div>
-            <Label className="text-slate-400 text-xs uppercase tracking-wider">Descripción</Label>
+            <Label className={labelClass}>Descripción</Label>
             <Textarea {...register('description')} className={`${fieldClass} resize-none`} rows={2} placeholder="Breve descripción del evento..." />
           </div>
 
           {/* Fecha + Lugar */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Fecha <span className="text-red-400">*</span></Label>
+              <Label className={labelClass}>Fecha <span className="text-primary">*</span></Label>
               <Input type="datetime-local" {...register('fecha')} className={fieldClass} />
-              {errors.fecha && <p className="text-red-400 text-xs mt-1">{errors.fecha.message}</p>}
+              {errors.fecha && <p className="text-destructive text-xs mt-1">{errors.fecha.message}</p>}
             </div>
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Lugar <span className="text-red-400">*</span></Label>
+              <Label className={labelClass}>Lugar <span className="text-primary">*</span></Label>
               <Input {...register('lugar')} className={fieldClass} placeholder="Ej: Movistar Arena" />
-              {errors.lugar && <p className="text-red-400 text-xs mt-1">{errors.lugar.message}</p>}
+              {errors.lugar && <p className="text-destructive text-xs mt-1">{errors.lugar.message}</p>}
             </div>
           </div>
 
           {/* Ciudad + Género */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Ciudad</Label>
+              <Label className={labelClass}>Ciudad</Label>
               <Input {...register('ciudad')} className={fieldClass} placeholder="Ej: Bogotá" />
             </div>
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Género</Label>
+              <Label className={labelClass}>Género</Label>
               <Input {...register('genero')} className={fieldClass} placeholder="Ej: Rock, Pop, Jazz" />
             </div>
           </div>
@@ -151,28 +156,30 @@ export function EventModal({ open, evento, onClose, onSaved }: EventModalProps) 
           {/* Precio + Aforo */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Precio ETH <span className="text-red-400">*</span></Label>
+              <Label className={labelClass}>Precio ETH <span className="text-primary">*</span></Label>
               <Input {...register('precio_eth')} className={fieldClass} placeholder="0.05" />
-              {errors.precio_eth && <p className="text-red-400 text-xs mt-1">{errors.precio_eth.message}</p>}
+              {errors.precio_eth && <p className="text-destructive text-xs mt-1">{errors.precio_eth.message}</p>}
             </div>
             <div>
-              <Label className="text-slate-400 text-xs uppercase tracking-wider">Aforo <span className="text-red-400">*</span></Label>
+              <Label className={labelClass}>Aforo <span className="text-primary">*</span></Label>
               <Input type="number" {...register('aforo')} className={fieldClass} placeholder="5000" />
-              {errors.aforo && <p className="text-red-400 text-xs mt-1">{errors.aforo.message}</p>}
+              {errors.aforo && <p className="text-destructive text-xs mt-1">{errors.aforo.message}</p>}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white">
+          <div className="perf-rule mt-2" aria-hidden />
+          <div className="flex justify-end gap-3 pt-1">
+            <Button type="button" variant="ghost" size="lg" onClick={onClose} className="text-muted-foreground hover:text-paper">
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="lg"
               disabled={saving}
-              className="bg-violet-600 hover:bg-violet-700 text-white gap-2 shadow-lg shadow-violet-500/25"
+              className="gap-2 font-semibold"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              {saving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear evento'}
+              {saving ? 'Sellando…' : isEdit ? 'Actualizar' : 'Emitir función'}
             </Button>
           </div>
         </form>

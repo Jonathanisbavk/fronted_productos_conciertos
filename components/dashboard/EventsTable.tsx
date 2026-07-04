@@ -1,18 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Link2, Zap, ShieldCheck } from 'lucide-react';
+import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Zap, ShieldCheck, Ticket, Sparkles, BadgeCheck, Send } from 'lucide-react';
 import { Button }                  from '@/components/ui/button';
 import { NeonBadge }               from '@/components/shared/NeonBadge';
 import { EventModal }              from './EventModal';
-import { deleteEvento, updateTxHash } from '@/lib/api';
+import { deleteEvento, updateTxHash, updateNftToken, transferNftOwner } from '@/lib/api';
 import { enviarEventoOnChain, validarEventoOnChain } from '@/lib/blockchain';
+import { mintEventoNFT, verificarNFT, transferirNFT } from '@/lib/nft';
 import { Evento }                  from '@/lib/types';
-import { notify, confirmDelete, showLoading, closeAlert, showResult, escapeHtml } from '@/lib/swal';
+import { notify, confirmDelete, showLoading, closeAlert, showResult, escapeHtml, promptText } from '@/lib/swal';
+
+// Cuenta de Ganache sugerida como destino por defecto al transferir (importada en MetaMask).
+const DESTINO_SUGERIDO = '0xada53769c1679cc8A927806b7417Cc7B297Bcd9d';
 
 interface EventsTableProps {
   eventos:   Evento[];
   onRefresh: () => void;
+  account:   string | null;   // wallet conectada (necesaria para acunar/verificar el NFT)
 }
 
 /**
@@ -23,7 +28,11 @@ interface EventsTableProps {
  */
 function OnChainBadge({ txHash }: { txHash?: string | null }) {
   if (!txHash) {
-    return <span className="text-xs text-slate-600">—</span>;
+    return (
+      <span className="inline-flex items-center rounded-sm border border-dashed border-border px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-widest text-muted-foreground/70">
+        Sin emitir
+      </span>
+    );
   }
   const short = `${txHash.slice(0, 6)}…${txHash.slice(-4)}`;
   const copy = () => {
@@ -34,27 +43,29 @@ function OnChainBadge({ txHash }: { txHash?: string | null }) {
     <button
       onClick={copy}
       title={`On-chain · ${txHash} (clic para copiar)`}
-      className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-mono text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+      className="group/stamp inline-flex flex-col items-center gap-0.5 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-valid/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
     >
-      <Link2 size={11} />
-      {short}
+      <span className="stamp transition-transform group-hover/stamp:rotate-0">
+        <ShieldCheck size={11} /> Verificado
+      </span>
+      <span className="font-mono text-[0.6rem] tracking-wide text-gold/70">{short}</span>
     </button>
   );
 }
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-white/5">
+    <tr className="border-b border-border">
       {[...Array(8)].map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-white/5 rounded animate-pulse" />
+          <div className="h-4 animate-pulse rounded bg-muted" />
         </td>
       ))}
     </tr>
   );
 }
 
-export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
+export function EventsTable({ eventos, onRefresh, account }: EventsTableProps) {
   const [editEvento, setEditEvento] = useState<Evento | null>(null);
   const [loading]                   = useState(false);
 
@@ -100,11 +111,11 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
 
       const filas = r.checks
         .map(
-          (c) => `<tr>
-            <td style="padding:6px 10px;text-align:left;color:#94a3b8">${escapeHtml(c.campo)}</td>
-            <td style="padding:6px 10px;font-family:monospace">${escapeHtml(c.bd)}</td>
-            <td style="padding:6px 10px;font-family:monospace">${escapeHtml(c.chain)}</td>
-            <td style="padding:6px 10px;text-align:center">${c.ok ? '✅' : '❌'}</td>
+          (c) => `<tr style="border-top:1px solid #332b20">
+            <td style="padding:6px 10px;text-align:left;color:#9b8d75">${escapeHtml(c.campo)}</td>
+            <td style="padding:6px 10px;font-family:monospace;color:#ece3d0">${escapeHtml(c.bd)}</td>
+            <td style="padding:6px 10px;font-family:monospace;color:#ece3d0">${escapeHtml(c.chain)}</td>
+            <td style="padding:6px 10px;text-align:center">${c.ok ? '✓' : '✕'}</td>
           </tr>`,
         )
         .join('');
@@ -112,18 +123,18 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
       const html = `
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
           <thead>
-            <tr style="color:#64748b;text-transform:uppercase;font-size:11px">
+            <tr style="color:#d9a441;text-transform:uppercase;font-size:11px;letter-spacing:0.12em">
               <th style="padding:6px 10px;text-align:left">Campo</th>
-              <th style="padding:6px 10px;text-align:left">Base de datos</th>
+              <th style="padding:6px 10px;text-align:left">Taquilla</th>
               <th style="padding:6px 10px;text-align:left">On-chain</th>
               <th style="padding:6px 10px">OK</th>
             </tr>
           </thead>
           <tbody>${filas}</tbody>
         </table>
-        <p style="margin-top:12px;font-size:12px;color:#64748b">
+        <p style="margin-top:12px;font-size:12px;color:#9b8d75">
           Organizador on-chain:<br/>
-          <span style="font-family:monospace;color:#34d399">${escapeHtml(r.organizador)}</span>
+          <span style="font-family:monospace;color:#79a88c">${escapeHtml(r.organizador)}</span>
         </p>`;
 
       showResult(
@@ -134,6 +145,100 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
     } catch (e) {
       closeAlert();
       notify('error', e instanceof Error ? e.message : 'No se pudo validar on-chain');
+    }
+  };
+
+  // Acuna el boleto NFT (contrato EventoNFT) firmando con MetaMask, y guarda el tokenId
+  // en la BD. Equivale al botón "MINT NFT" del lab de facturas.
+  const mintNFT = async (ev: Evento) => {
+    if (!account) {
+      notify('error', 'Primero conecta tu wallet (MetaMask)');
+      return;
+    }
+    try {
+      showLoading('Confirma la acuñación en MetaMask...');
+      const { txHash, tokenId } = await mintEventoNFT(ev, account);
+      await updateNftToken(ev.id, tokenId, account);   // guarda tokenId + dueño inicial
+      closeAlert();
+      notify('success', `Boleto NFT #${tokenId} acuñado ✓ ${txHash.slice(0, 10)}…`);
+      onRefresh();
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo acuñar el NFT');
+    }
+  };
+
+  // Verifica el NFT del evento (tokenId + metadata + propiedad). Equivale a
+  // "VERIFICAR NFT" del lab de facturas; el backend lee el contrato on-chain.
+  const verNFT = async (ev: Evento) => {
+    try {
+      showLoading('Verificando el boleto NFT...');
+      const r = await verificarNFT(ev.id, account ?? '');
+      closeAlert();
+
+      if (!r.hasNFT || !r.metadata) {
+        showResult('info', 'Sin boleto NFT', 'Este evento aún no tiene un boleto NFT acuñado.');
+        return;
+      }
+
+      const esDueño = r.ownership?.isOwner;
+      const fecha = new Date(Number(r.metadata.timestamp) * 1000).toLocaleString('es-CO');
+      const html = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+          <tbody>
+            <tr style="border-top:1px solid #332b20"><td style="padding:6px 10px;text-align:left;color:#9b8d75">Token ID</td><td style="padding:6px 10px;font-family:monospace;color:#d9a441">#${escapeHtml(String(r.tokenId))}</td></tr>
+            <tr style="border-top:1px solid #332b20"><td style="padding:6px 10px;text-align:left;color:#9b8d75">Evento</td><td style="padding:6px 10px;font-family:monospace;color:#ece3d0">${escapeHtml(r.metadata.name)}</td></tr>
+            <tr style="border-top:1px solid #332b20"><td style="padding:6px 10px;text-align:left;color:#9b8d75">Recinto</td><td style="padding:6px 10px;font-family:monospace;color:#ece3d0">${escapeHtml(r.metadata.lugar)}</td></tr>
+            <tr style="border-top:1px solid #332b20"><td style="padding:6px 10px;text-align:left;color:#9b8d75">Precio</td><td style="padding:6px 10px;font-family:monospace;color:#ece3d0">Ξ ${escapeHtml(r.metadata.precio)}</td></tr>
+            <tr style="border-top:1px solid #332b20"><td style="padding:6px 10px;text-align:left;color:#9b8d75">Acuñado</td><td style="padding:6px 10px;font-family:monospace;color:#ece3d0">${escapeHtml(fecha)}</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:12px;font-size:12px;color:#9b8d75">
+          Propietario on-chain:<br/>
+          <span style="font-family:monospace;color:${esDueño ? '#79a88c' : '#d9a441'}">${escapeHtml(r.ownership?.owner ?? '')}</span><br/>
+          <span style="font-size:12px">${esDueño ? '✓ Este boleto te pertenece' : '⚠ Este boleto pertenece a otra wallet'}</span>
+        </p>`;
+
+      showResult(esDueño ? 'success' : 'warning',
+        esDueño ? 'Boleto NFT verificado ✓' : 'Boleto NFT de otra wallet',
+        html);
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo verificar el NFT');
+    }
+  };
+
+  // Transfiere el boleto NFT a otra wallet de Ganache (safeTransferFrom). La firma el
+  // dueño actual con MetaMask; luego guardamos el nuevo dueño en la BD.
+  const transferNFT = async (ev: Evento) => {
+    if (!ev.nftTokenId) {
+      notify('error', 'Este evento aún no tiene un boleto NFT acuñado');
+      return;
+    }
+    if (!account) {
+      notify('error', 'Conecta la wallet dueña del boleto (MetaMask)');
+      return;
+    }
+    const destino = await promptText('Transferir boleto NFT', {
+      html: `Boleto <b>#${ev.nftTokenId}</b> — "${escapeHtml(ev.name)}".<br/>` +
+            `<span style="font-size:12px;color:#9b8d75">Pega la wallet destino (otra cuenta de Ganache importada en MetaMask). ` +
+            `Firmarás la transferencia con la cuenta dueña actual.</span>`,
+      value: DESTINO_SUGERIDO,
+      placeholder: '0x…',
+      confirmText: 'Transferir',
+    });
+    if (!destino) return;
+
+    try {
+      showLoading('Confirma la transferencia en MetaMask...');
+      const { txHash } = await transferirNFT(ev.nftTokenId, account, destino);
+      await transferNftOwner(ev.id, destino);          // guarda el nuevo dueño en la BD
+      closeAlert();
+      notify('success', `Boleto #${ev.nftTokenId} transferido ✓ ${txHash.slice(0, 10)}…`);
+      onRefresh();
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo transferir el NFT');
     }
   };
 
@@ -161,37 +266,41 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
 
   if (eventos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4 text-slate-600">
-        <span className="text-6xl">🎫</span>
-        <p className="text-lg font-medium text-slate-500">No hay eventos aún</p>
-        <p className="text-sm">Crea el primer evento usando el botón superior</p>
+      <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+        <Ticket size={40} className="text-border" strokeWidth={1.5} />
+        <p className="font-display text-2xl uppercase tracking-wide text-muted-foreground">
+          Taquilla cerrada
+        </p>
+        <p className="max-w-xs text-sm text-muted-foreground/70">
+          Aún no hay funciones. Usa <span className="text-gold">Abrir taquilla</span> para emitir la primera.
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto rounded-xl border border-white/5">
+      {/* Manifiesto — escritorio */}
+      <div className="hidden overflow-x-auto rounded-sm ring-1 ring-border md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/5 bg-white/[0.02] text-slate-500 uppercase text-xs tracking-wider">
-              <th className="px-4 py-3 text-left">Banner</th>
-              <th className="px-4 py-3 text-left">Nombre</th>
-              <th className="px-4 py-3 text-left">Fecha</th>
-              <th className="px-4 py-3 text-left">Lugar</th>
-              <th className="px-4 py-3 text-left">Género</th>
-              <th className="px-4 py-3 text-right">Precio Ξ</th>
-              <th className="px-4 py-3 text-right">Aforo</th>
-              <th className="px-4 py-3 text-center">On-chain</th>
-              <th className="px-4 py-3 text-center">Acciones</th>
+            <tr className="bg-muted/40 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted-foreground">
+              <th className="px-4 py-2.5 text-left font-bold">Boleto</th>
+              <th className="px-4 py-2.5 text-left font-bold">Función</th>
+              <th className="px-4 py-2.5 text-left font-bold">Fecha</th>
+              <th className="px-4 py-2.5 text-left font-bold">Recinto</th>
+              <th className="px-4 py-2.5 text-left font-bold">Sección</th>
+              <th className="px-4 py-2.5 text-right font-bold">Precio Ξ</th>
+              <th className="px-4 py-2.5 text-right font-bold">Aforo</th>
+              <th className="px-4 py-2.5 text-center font-bold">Registro</th>
+              <th className="px-4 py-2.5 text-center font-bold">Taquilla</th>
             </tr>
           </thead>
           <tbody>
             {eventos.map((ev) => (
               <tr
                 key={ev.id}
-                className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group"
+                className="group border-t border-border transition-colors hover:bg-muted/30"
               >
                 <td className="px-4 py-3">
                   {ev.banner ? (
@@ -199,76 +308,114 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
                     <img
                       src={ev.banner}
                       alt={ev.name}
-                      className="w-12 h-12 object-cover rounded-lg border border-white/10"
+                      className="h-12 w-12 rounded-sm border border-border object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-slate-600">
-                      🎫
+                    <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted text-muted-foreground">
+                      <Ticket size={18} strokeWidth={1.5} />
                     </div>
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-slate-100 group-hover:text-white">{ev.name}</p>
-                  {ev.ciudad && <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1"><MapPin size={10} />{ev.ciudad}</p>}
+                  <p className="font-medium text-paper">{ev.name}</p>
+                  {ev.ciudad && (
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin size={10} />{ev.ciudad}
+                    </p>
+                  )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="flex items-center gap-1.5 text-slate-400">
-                    <CalendarDays size={13} className="text-slate-600" />
+                  <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                    <CalendarDays size={13} className="text-gold/70" />
                     {formatFecha(ev.fecha)}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-slate-400">{ev.lugar}</td>
+                <td className="px-4 py-3 text-muted-foreground">{ev.lugar}</td>
                 <td className="px-4 py-3">
                   <NeonBadge label={ev.genero} />
                 </td>
-                <td className="px-4 py-3 text-right font-mono text-emerald-400">
+                <td className="px-4 py-3 text-right font-mono text-paper tnum">
                   Ξ {Number(ev.precio_eth).toFixed(4)}
                 </td>
-                <td className="px-4 py-3 text-right text-slate-300">
-                  {Number(ev.aforo).toLocaleString()}
+                <td className="px-4 py-3 text-right font-mono text-muted-foreground tnum">
+                  {Number(ev.aforo).toLocaleString('es-CO')}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <OnChainBadge txHash={ev.txHash} />
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-0.5">
                     {!ev.txHash ? (
                       <button
                         onClick={() => enviarBlockchain(ev)}
-                        className="p-1.5 rounded hover:bg-emerald-500/10 text-slate-500 hover:text-emerald-400 transition-colors"
-                        title="Enviar a blockchain (firma con MetaMask)"
+                        className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-primary/15 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+                        title="Emitir on-chain (firma con MetaMask)"
+                        aria-label={`Emitir "${ev.name}" on-chain`}
                       >
                         <Zap size={14} />
                       </button>
                     ) : (
                       <button
                         onClick={() => validar(ev)}
-                        className="p-1.5 rounded hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 transition-colors"
-                        title="Validar contra la blockchain"
+                        className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-valid/15 hover:text-valid focus-visible:ring-2 focus-visible:ring-valid/50"
+                        title="Verificar contra la cadena"
+                        aria-label={`Verificar "${ev.name}" contra la cadena`}
                       >
                         <ShieldCheck size={14} />
                       </button>
+                    )}
+                    {!ev.nftTokenId ? (
+                      <button
+                        onClick={() => mintNFT(ev)}
+                        className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-gold/15 hover:text-gold focus-visible:ring-2 focus-visible:ring-gold/50"
+                        title="Acuñar boleto NFT (firma con MetaMask)"
+                        aria-label={`Acuñar boleto NFT de "${ev.name}"`}
+                      >
+                        <Sparkles size={14} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => verNFT(ev)}
+                          className="rounded-sm p-1.5 text-gold outline-none transition-colors hover:bg-gold/15 hover:text-gold focus-visible:ring-2 focus-visible:ring-gold/50"
+                          title={`Validar boleto NFT #${ev.nftTokenId}`}
+                          aria-label={`Validar boleto NFT de "${ev.name}"`}
+                        >
+                          <BadgeCheck size={14} />
+                        </button>
+                        <button
+                          onClick={() => transferNFT(ev)}
+                          className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-primary/15 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+                          title={`Transferir boleto NFT #${ev.nftTokenId} a otra wallet`}
+                          aria-label={`Transferir boleto NFT de "${ev.name}"`}
+                        >
+                          <Send size={14} />
+                        </button>
+                      </>
                     )}
                     <a
                       href={ev.metadataPath}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-cyan-400 transition-colors"
+                      className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-gold focus-visible:ring-2 focus-visible:ring-gold/50"
                       title="Ver metadata NFT"
+                      aria-label={`Ver metadata NFT de "${ev.name}"`}
                     >
                       <ExternalLink size={14} />
                     </a>
                     <button
                       onClick={() => setEditEvento(ev)}
-                      className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-violet-400 transition-colors"
+                      className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-paper focus-visible:ring-2 focus-visible:ring-ring/50"
                       title="Editar"
+                      aria-label={`Editar "${ev.name}"`}
                     >
                       <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => askDelete(ev)}
-                      className="p-1.5 rounded hover:bg-white/5 text-slate-500 hover:text-red-400 transition-colors"
+                      className="rounded-sm p-1.5 text-muted-foreground outline-none transition-colors hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/50"
                       title="Eliminar"
+                      aria-label={`Eliminar "${ev.name}"`}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -280,46 +427,61 @@ export function EventsTable({ eventos, onRefresh }: EventsTableProps) {
         </table>
       </div>
 
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-3">
+      {/* Manifiesto — móvil (boletos) */}
+      <div className="space-y-3 md:hidden">
         {eventos.map((ev) => (
-          <div key={ev.id} className="rounded-xl border border-white/5 bg-[#12121a] overflow-hidden">
+          <div key={ev.id} className="overflow-hidden rounded-sm bg-card ring-1 ring-border">
             {ev.banner && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={ev.banner} alt={ev.name} className="w-full h-36 object-cover" />
+              <img src={ev.banner} alt={ev.name} className="h-36 w-full object-cover" />
             )}
             <div className="p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-slate-100">{ev.name}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{ev.lugar} · {ev.ciudad}</p>
+                  <p className="font-display text-lg font-semibold leading-tight text-paper">{ev.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{ev.lugar} · {ev.ciudad}</p>
                 </div>
                 <NeonBadge label={ev.genero} />
               </div>
-              <div className="flex items-center justify-between mt-3 text-sm">
-                <span className="text-slate-500">{formatFecha(ev.fecha)}</span>
-                <span className="font-mono text-emerald-400">Ξ {Number(ev.precio_eth).toFixed(4)}</span>
+              <div className="mt-3 flex items-center justify-between text-sm">
+                <span className="font-mono text-xs text-muted-foreground">{formatFecha(ev.fecha)}</span>
+                <span className="font-mono text-paper tnum">Ξ {Number(ev.precio_eth).toFixed(4)}</span>
               </div>
               {ev.txHash && (
-                <div className="mt-2">
+                <div className="mt-2.5">
                   <OnChainBadge txHash={ev.txHash} />
                 </div>
               )}
-              <div className="flex gap-2 mt-3 pt-3 border-t border-white/5">
+              <div className="perf-rule mt-3" aria-hidden />
+              <div className="mt-3 flex gap-2">
                 {!ev.txHash ? (
-                  <Button size="sm" variant="ghost" className="flex-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => enviarBlockchain(ev)}>
-                    <Zap size={13} className="mr-1" /> Blockchain
+                  <Button size="sm" variant="ghost" className="flex-1 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => enviarBlockchain(ev)}>
+                    <Zap size={13} className="mr-1" /> Emitir
                   </Button>
                 ) : (
-                  <Button size="sm" variant="ghost" className="flex-1 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10" onClick={() => validar(ev)}>
-                    <ShieldCheck size={13} className="mr-1" /> Validar
+                  <Button size="sm" variant="ghost" className="flex-1 text-valid hover:bg-valid/10 hover:text-valid" onClick={() => validar(ev)}>
+                    <ShieldCheck size={13} className="mr-1" /> Verificar
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" className="flex-1 text-violet-400 hover:text-violet-300 hover:bg-violet-500/10" onClick={() => setEditEvento(ev)}>
+                {!ev.nftTokenId ? (
+                  <Button size="sm" variant="ghost" className="flex-1 text-gold hover:bg-gold/10 hover:text-gold" onClick={() => mintNFT(ev)}>
+                    <Sparkles size={13} className="mr-1" /> Mint NFT
+                  </Button>
+                ) : (
+                  <>
+                    <Button size="sm" variant="ghost" className="flex-1 text-gold hover:bg-gold/10 hover:text-gold" onClick={() => verNFT(ev)}>
+                      <BadgeCheck size={13} className="mr-1" /> Validar
+                    </Button>
+                    <Button size="sm" variant="ghost" className="flex-1 text-primary hover:bg-primary/10 hover:text-primary" onClick={() => transferNFT(ev)}>
+                      <Send size={13} className="mr-1" /> Transferir
+                    </Button>
+                  </>
+                )}
+                <Button size="sm" variant="ghost" className="flex-1 hover:bg-muted hover:text-paper" onClick={() => setEditEvento(ev)}>
                   <Pencil size={13} className="mr-1" /> Editar
                 </Button>
-                <Button size="sm" variant="ghost" className="flex-1 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={() => askDelete(ev)}>
-                  <Trash2 size={13} className="mr-1" /> Eliminar
+                <Button size="sm" variant="ghost" className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => askDelete(ev)}>
+                  <Trash2 size={13} className="mr-1" /> Borrar
                 </Button>
               </div>
             </div>

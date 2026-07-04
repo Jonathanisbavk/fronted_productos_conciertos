@@ -7,22 +7,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono-serial);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+
+  /* Acentos de "taquilla" */
+  --color-gold: var(--gold);
+  --color-valid: var(--valid);
+  --color-paper: var(--paper);
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -44,107 +38,174 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ===========================================================
+   TicketChain — tema "Box Office Ledger"
+   Tinta cálida nocturna + bermellón de boleto + dorado foil.
+   Tema único (oscuro): :root ES el tema, sin variante light.
+   =========================================================== */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --background: #15120d;          /* tinta nocturna cálida */
+  --foreground: #ece3d0;          /* hueso / papel de boleto */
+  --card: #1c1813;                /* talón en relieve */
+  --card-foreground: #ece3d0;
+  --popover: #1c1813;
+  --popover-foreground: #ece3d0;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --primary: #e2543b;             /* bermellón "ADMIT ONE" */
+  --primary-foreground: #1a0d08;
+
+  --secondary: #29231a;
+  --secondary-foreground: #ece3d0;
+  --muted: #221d16;
+  --muted-foreground: #9b8d75;    /* gris cálido */
+  --accent: #29231a;
+  --accent-foreground: #f4ecda;
+
+  --destructive: #c8402f;
+  --border: #332b20;              /* filete cálido */
+  --input: #3a3124;
+  --ring: #e2543b;
+
+  --radius: 0.4rem;
+
+  /* acentos de taquilla */
+  --gold: #d9a441;                /* foil / serie */
+  --valid: #79a88c;              /* sello "verificado" salvia */
+  --paper: #ece3d0;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 1;
   }
   html {
     @apply font-sans;
   }
+  /* Numerales tabulares en datos numéricos */
+  .tnum { font-variant-numeric: tabular-nums; }
+}
+
+/* -----------------------------------------------------------
+   Firma 1 — Perforación / línea de corte de boleto
+   ----------------------------------------------------------- */
+.perf-rule {
+  height: 2px;
+  background-image: radial-gradient(circle, var(--border) 0 1.4px, transparent 1.8px);
+  background-size: 11px 2px;
+  background-repeat: repeat-x;
+  background-position: center;
+}
+.perf-rule-gold {
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--gold) 55%, transparent) 0 1.4px, transparent 1.8px);
+}
+
+/* -----------------------------------------------------------
+   Firma 2 — Guilloché (impresión de seguridad anti-falsificación)
+   Textura tenue de seguridad, evoca el grabado de un boleto/billete.
+   ----------------------------------------------------------- */
+.guilloche {
+  position: relative;
+  isolation: isolate;
+}
+.guilloche::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.5;
+  background-image:
+    repeating-radial-gradient(circle at 18% 120%, transparent 0 8px, color-mix(in srgb, var(--gold) 14%, transparent) 8px 8.6px),
+    repeating-radial-gradient(circle at 86% -20%, transparent 0 10px, color-mix(in srgb, var(--gold) 10%, transparent) 10px 10.6px);
+  -webkit-mask-image: linear-gradient(135deg, #000 0%, transparent 70%);
+          mask-image: linear-gradient(135deg, #000 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------
+   Firma 3 — Talón de boleto con muescas troqueladas
+   Semicírculos recortados arriba/abajo en la línea de perforación,
+   más perforación punteada vertical entre talón y cuerpo.
+   ----------------------------------------------------------- */
+.ticket-stub {
+  --stub: 72px;     /* posición de la perforación desde la izquierda */
+  --notch: 9px;
+  position: relative;
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at var(--stub) 0,    #0000 97%, #000) top    / 100% 50.5% no-repeat,
+    radial-gradient(circle var(--notch) at var(--stub) 100%, #0000 97%, #000) bottom / 100% 50.5% no-repeat;
+          mask:
+    radial-gradient(circle var(--notch) at var(--stub) 0,    #0000 97%, #000) top    / 100% 50.5% no-repeat,
+    radial-gradient(circle var(--notch) at var(--stub) 100%, #0000 97%, #000) bottom / 100% 50.5% no-repeat;
+}
+.ticket-stub::after {
+  content: "";
+  position: absolute;
+  top: var(--notch);
+  bottom: var(--notch);
+  left: var(--stub);
+  width: 0;
+  border-left: 1.5px dashed color-mix(in srgb, var(--gold) 40%, transparent);
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------
+   Sello "VERIFICADO" — estilo estampado, ligeramente rotado
+   ----------------------------------------------------------- */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.5rem;
+  border: 1.5px solid color-mix(in srgb, var(--valid) 60%, transparent);
+  color: var(--valid);
+  border-radius: 3px;
+  font-family: var(--font-mono-serial), monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--valid) 18%, transparent);
+}
+
+/* Page-load reveal, respetando reduce-motion */
+@keyframes ticket-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: ticket-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise { animation: none; }
+  .perf-rule { background-position: center; }
 }
 
 /* ===========================================================
-   SweetAlert2 — tema TicketChain (oscuro / neón)
+   SweetAlert2 — tema TicketChain (tinta / bermellón / foil)
    Clases aplicadas desde lib/swal.ts (.swal-tc-*).
    =========================================================== */
 .swal-tc-popup {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 24px 70px -20px rgba(124, 58, 237, 0.45);
+  background: #1c1813 !important;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 24px 70px -20px rgba(0, 0, 0, 0.7);
 }
 .swal-tc-title {
-  color: #f1f5f9;
-  font-size: 1.2rem;
-  font-weight: 700;
+  color: #f4ecda;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .swal-tc-text {
-  color: #94a3b8;
+  color: #9b8d75;
   font-size: 0.95rem;
 }
 .swal-tc-actions {
@@ -153,7 +214,7 @@
 .swal-tc-confirm,
 .swal-tc-cancel,
 .swal-tc-danger {
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 0.6rem 1.2rem;
   font-weight: 600;
   font-size: 0.9rem;
@@ -164,40 +225,57 @@
 .swal-tc-confirm:active,
 .swal-tc-cancel:active,
 .swal-tc-danger:active {
-  transform: scale(0.97);
+  transform: translateY(1px);
 }
 .swal-tc-confirm {
-  background: #7c3aed;
-  color: #fff;
-  box-shadow: 0 8px 22px -8px rgba(124, 58, 237, 0.7);
+  background: #e2543b;
+  color: #1a0d08;
 }
 .swal-tc-confirm:hover {
-  background: #6d28d9;
+  background: #ef6347;
 }
 .swal-tc-danger {
-  background: #dc2626;
+  background: #c8402f;
   color: #fff;
-  box-shadow: 0 8px 22px -8px rgba(220, 38, 38, 0.7);
 }
 .swal-tc-danger:hover {
-  background: #b91c1c;
+  background: #d94d3b;
 }
 .swal-tc-cancel {
   background: transparent;
-  color: #94a3b8;
-  border-color: rgba(255, 255, 255, 0.12);
+  color: #9b8d75;
+  border-color: var(--border);
 }
 .swal-tc-cancel:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: #f4ecda;
+  background: rgba(255, 255, 255, 0.04);
+}
+/* Input (p. ej. wallet destino al transferir el NFT) */
+.swal-tc-input {
+  background: #12100c !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  color: #ece3d0 !important;
+  box-shadow: none !important;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9rem;
+}
+.swal-tc-input:focus {
+  border-color: #d9a441 !important;
+  box-shadow: 0 0 0 2px rgba(217, 164, 65, 0.25) !important;
 }
 /* Toast */
 .swal-tc-toast {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
+  background: #1c1813 !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.7);
 }
 .swal-tc-toast-title {
+  color: #ece3d0;
   font-size: 0.9rem !important;
   font-weight: 500;
+}
+.swal-tc-toast .swal2-timer-progress-bar {
+  background: color-mix(in srgb, var(--gold) 70%, transparent);
 }
