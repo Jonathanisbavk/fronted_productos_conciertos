@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Zap, ShieldCheck, Ticket, Sparkles, BadgeCheck, Send } from 'lucide-react';
+import { Pencil, Trash2, ExternalLink, CalendarDays, MapPin, Zap, ShieldCheck, Ticket, Sparkles, BadgeCheck, Send, FileText } from 'lucide-react';
 import { Button }                  from '@/components/ui/button';
 import { NeonBadge }               from '@/components/shared/NeonBadge';
 import { EventModal }              from './EventModal';
-import { deleteEvento, updateTxHash, updateNftToken, transferNftOwner } from '@/lib/api';
+import { deleteEvento, updateTxHash, updateNftToken, transferNftOwner, generarPdfEvento } from '@/lib/api';
 import { enviarEventoOnChain, validarEventoOnChain } from '@/lib/blockchain';
 import { mintEventoNFT, verificarNFT, transferirNFT } from '@/lib/nft';
 import { Evento }                  from '@/lib/types';
@@ -242,6 +242,43 @@ export function EventsTable({ eventos, onRefresh, account }: EventsTableProps) {
     }
   };
 
+  // Genera el PDF del boleto en el backend (con QR de verificación) y lo publica
+  // en IPFS. Muestra el CID y la URL del gateway; si el nodo IPFS no está corriendo,
+  // ofrece el PDF local igualmente (equivale a "GENERAR PDF" del Lab 14).
+  const generarPDF = async (ev: Evento) => {
+    try {
+      showLoading('Generando PDF y subiendo a IPFS...');
+      const r = await generarPdfEvento(ev.id);
+      closeAlert();
+
+      const linkLocal =
+        `<a href="${r.filePath}" target="_blank" rel="noreferrer" style="color:#d9a441">Ver PDF local</a>`;
+
+      if (r.ipfsHash) {
+        showResult(
+          'success',
+          'PDF publicado en IPFS ✓',
+          `<p style="font-size:13px;color:#9b8d75;margin-bottom:10px">Boleto de <b style="color:#ece3d0">${escapeHtml(ev.name)}</b></p>` +
+          `<p style="font-size:12px;color:#9b8d75">CID (hash IPFS):<br/><span style="font-family:monospace;color:#79a88c;word-break:break-all">${escapeHtml(r.ipfsHash)}</span></p>` +
+          `<p style="margin-top:12px;font-size:13px">` +
+          `<a href="${r.ipfsUrl}" target="_blank" rel="noreferrer" style="color:#79a88c">Ver PDF en IPFS</a>` +
+          ` &nbsp;·&nbsp; ${linkLocal}</p>`,
+        );
+      } else {
+        showResult(
+          'warning',
+          'PDF generado (sin IPFS)',
+          `<p style="font-size:13px;color:#9b8d75">El nodo IPFS no respondió, pero el PDF se generó localmente.</p>` +
+          `<p style="margin-top:12px;font-size:13px">${linkLocal}</p>`,
+        );
+      }
+      onRefresh();   // refresca para mostrar el ipfsHash guardado en la BD
+    } catch (e) {
+      closeAlert();
+      notify('error', e instanceof Error ? e.message : 'No se pudo generar el PDF');
+    }
+  };
+
   const handleSaved = (saved: Evento) => {
     notify('success', `${saved.name} ${editEvento ? 'actualizado' : 'creado'} ✓`);
     setEditEvento(null);
@@ -393,6 +430,14 @@ export function EventsTable({ eventos, onRefresh, account }: EventsTableProps) {
                         </button>
                       </>
                     )}
+                    <button
+                      onClick={() => generarPDF(ev)}
+                      className={`rounded-sm p-1.5 outline-none transition-colors hover:bg-valid/15 hover:text-valid focus-visible:ring-2 focus-visible:ring-valid/50 ${ev.ipfsHash ? 'text-valid' : 'text-muted-foreground'}`}
+                      title={ev.ipfsHash ? `PDF en IPFS ✓ (${ev.ipfsHash.slice(0, 10)}…) — regenerar` : 'Generar PDF del boleto y publicarlo en IPFS'}
+                      aria-label={`Generar PDF de "${ev.name}"`}
+                    >
+                      <FileText size={14} />
+                    </button>
                     <a
                       href={ev.metadataPath}
                       target="_blank"
@@ -477,6 +522,9 @@ export function EventsTable({ eventos, onRefresh, account }: EventsTableProps) {
                     </Button>
                   </>
                 )}
+                <Button size="sm" variant="ghost" className="flex-1 text-valid hover:bg-valid/10 hover:text-valid" onClick={() => generarPDF(ev)}>
+                  <FileText size={13} className="mr-1" /> PDF
+                </Button>
                 <Button size="sm" variant="ghost" className="flex-1 hover:bg-muted hover:text-paper" onClick={() => setEditEvento(ev)}>
                   <Pencil size={13} className="mr-1" /> Editar
                 </Button>

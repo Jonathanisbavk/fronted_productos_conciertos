@@ -14,6 +14,7 @@ export interface Evento {
   onchainId?: number | null;   // id del evento dentro del contrato Events
   nftTokenId?: number | null;  // tokenId del boleto NFT acunado (contrato EventoNFT)
   nftOwner?: string | null;    // wallet dueña actual del NFT (cambia al transferir)
+  ipfsHash?: string | null;    // CID del PDF del boleto publicado en IPFS
   createdAt: string;
 }
 

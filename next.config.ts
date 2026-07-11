@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
       { source: '/api/:path*',      destination: 'http://localhost:3000/api/:path*' },
       { source: '/uploads/:path*',  destination: 'http://localhost:3000/uploads/:path*' },
       { source: '/metadata/:path*', destination: 'http://localhost:3000/metadata/:path*' },
+      { source: '/pdfs/:path*',     destination: 'http://localhost:3000/pdfs/:path*' },
     ];
   },
   images: {

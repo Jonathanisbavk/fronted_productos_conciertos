@@ -107,6 +107,31 @@ export async function updateNftToken(id: number, tokenId: number, owner?: string
   return res.json();
 }
 
+// --- PDF + IPFS (Lab 14) ---
+
+/** Resultado de generar el PDF del boleto: ruta local y, si IPFS respondió, CID + URL del gateway. */
+export interface PdfResult {
+  filePath: string;
+  ipfsHash: string | null;
+  ipfsUrl:  string | null;
+}
+
+/**
+ * Genera el PDF del boleto del evento en el backend (datos + pruebas blockchain +
+ * QR de verificación) y lo publica en IPFS. GET /api/eventos/:id/pdf
+ */
+export async function generarPdfEvento(id: number): Promise<PdfResult> {
+  const res = await fetch(`${BASE}/${id}/pdf`, { cache: 'no-store' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Error al generar el PDF' }));
+    throw new Error(err.error ?? 'Error al generar el PDF');
+  }
+  return res.json();
+}
+
+/** URL del reporte final en PDF (todos los eventos, con QR). Se abre/descarga directo. */
+export const REPORTE_PDF_URL = `${BASE}/reporte/pdf`;
+
 /** Registra en el backend el nuevo dueño del NFT tras transferirlo. PUT /:id/nft/transfer */
 export async function transferNftOwner(id: number, owner: string): Promise<Evento> {
   const res = await fetch(`${BASE}/${id}/nft/transfer`, {

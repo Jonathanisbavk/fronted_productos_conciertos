@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, RefreshCw, Ticket, Wallet } from 'lucide-react';
+import { Plus, RefreshCw, Ticket, Wallet, FileDown } from 'lucide-react';
 import { Button }      from '@/components/ui/button';
 import { StatsBar }    from '@/components/dashboard/StatsBar';
 import { EventsTable } from '@/components/dashboard/EventsTable';
 import { EventModal }  from '@/components/dashboard/EventModal';
-import { getEventos }  from '@/lib/api';
+import { getEventos, REPORTE_PDF_URL } from '@/lib/api';
 import { Evento }      from '@/lib/types';
 import { notify }      from '@/lib/swal';
 import { useWallet }   from '@/lib/useWallet';
@@ -88,6 +88,18 @@ export default function DashboardPage() {
                 <span className="hidden sm:inline">{connecting ? 'Conectando…' : 'Conectar wallet'}</span>
               </Button>
             )}
+            {/* Reporte final en PDF: lo genera el backend con todos los eventos,
+                cada uno con su QR (IPFS o API). Se abre/descarga en otra pestaña. */}
+            <Button
+              onClick={() => window.open(REPORTE_PDF_URL, '_blank')}
+              variant="outline"
+              size="lg"
+              className="gap-1.5 border-gold/40 text-gold hover:bg-gold/10 hover:text-gold"
+              title="Descargar reporte final en PDF (con QR por evento)"
+            >
+              <FileDown size={15} />
+              <span className="hidden sm:inline">Reporte PDF</span>
+            </Button>
             <Button
               onClick={() => fetchData(true)}
               disabled={refreshing}
